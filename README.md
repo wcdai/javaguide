@@ -76,8 +76,9 @@ JDK源码学习笔记
 
 #### Q7：为什么ArrayList没有loadFactor，不像HashMap一样数据达到数组⼤⼩*loadFactor时就开始扩容？
 
-#### Q8：当数组容量远大于实际数据时，ArrayList是否会进行容量缩减？
+#### Q8：当数组容量远大于实际元素数量时，ArrayList是否会进行容量缩减？
 
+#### Q9：为什么建议arraylist创建时指定容量大小？
 
 
 #### 重点：

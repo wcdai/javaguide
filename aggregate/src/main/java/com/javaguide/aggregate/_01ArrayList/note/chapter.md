@@ -47,5 +47,86 @@
 
    1. 测试add和get方法
 
-   
 
+
+## 03_实现自动扩容
+
+### 一、目标
+
+- 主要功能
+
+- [ ] add(E e)中的扩容
+- [ ] add(int index, E element)中的扩容
+
+- 其他功能
+
+- [ ] MyArrayList()
+  
+  - 无参构造
+  
+  - 使用无参构造进行数组懒初始化（扩容时再初始化数组位默认容量）
+  
+- [ ] MyArrayList(int initialCapacity)
+
+  - 创建List时可指定初始化数组容量
+
+- [ ] MyArrayList(MyArrayList<E> c) 
+
+- [ ] addAll(MyArrayList<E>  c) （选做）
+- [ ] addAll(int index, MyArrayList<E> c) （选做）
+
+### 二、设计
+- add(E e)中的扩容
+  - 尾插法，当数组容量满时创建新数组进行扩容。将新老数组元素复制到新数组中
+    ![](pic/arrayListadd(E).png)
+- add(int index, E element)中的扩容
+  - 指定索引位进行数据插入
+      ![](pic/arraryListAdd(Index,E).webp)
+
+### 三、实现
+
+见git commit节点 `03_实现自动扩容`代码
+
+### 四、测试
+
+见`Chapter03`类中代码
+
+- SystemArraycopyTest1()
+  - System.arraycopy() API测试
+- ArraysCopyOfTest()
+  - Arrays.copyOf() API测试
+- autoExpansionTest1()
+  - 测试add(E e) 中触发自动扩容
+- autoExpansionTest2()
+  - add(int index, E element) 中触发自动扩容
+- autoExpansionTest3()
+  - 测试addAll(MyArrayList<E>  c)中触发自动扩容
+- autoExpansionTest4()
+  - 测试addAll(int index, MyArrayList<E> c)中触发自动扩容
+
+### 五、问题
+
+- Q1：用户创建MyArrayLis不指定容量时，是否立即分配默认容量？
+
+- Q2：数据达到该数组容量上限之后是否每添加一个元素就进行一次扩容？
+
+- Q3:   是否可以无限制扩容，MyArrayLis可达的最大容量是多少？
+
+- Q4：达到最大容量上限后，再次添加元素会怎样？
+
+- Q5：每次扩容，扩容了多少倍？
+
+- Q6：ArrayList扩容的时机是什么时候？
+
+- Q7：为什么ArrayList没有loadFactor，不像HashMap一样数据达到数组⼤⼩*loadFactor时就开始扩容？
+
+- Q8：当数组容量远大于实际元素大小时，ArrayList是否会进行容量缩减？
+
+- Q9：为什么建议arraylist创建时指定容量大小？
+
+
+
+### 六、重点
+
+1. ArrayLis的扩容机制
+2. 熟悉`System.arraycopy()`和 `Arrays.copyOf` API的使用

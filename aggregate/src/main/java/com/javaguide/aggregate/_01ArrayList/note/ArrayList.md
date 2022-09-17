@@ -1,6 +1,6 @@
 # 抄一个自己的`ArrayList`
 
-![](ArrayList.png)
+![](pic/ArrayList.png)
 
 ## ArrayList源码调试环境搭建
 
