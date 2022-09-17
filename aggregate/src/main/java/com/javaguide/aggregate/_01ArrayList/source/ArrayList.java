@@ -67,7 +67,7 @@ import sun.misc.SharedSecrets;
  * synchronizing on some object that naturally encapsulates the list.
  *
  * If no such object exists, the list should be "wrapped" using the
- * {@link Collections#synchronizedList Collections.synchronizedList}
+ * { Collections#synchronizedList Collections.synchronizedList}
  * method.  This is best done at creation time, to prevent accidental
  * unsynchronized access to the list:<pre>
  *   List list = Collections.synchronizedList(new ArrayList(...));</pre>
@@ -1470,7 +1470,5 @@ public class ArrayList<E> extends AbstractList<E>
         modCount++;
     }
 
-    public static void main(String[] args) {
-        System.out.println("args = " + args);
-    }
+
 }

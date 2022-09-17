@@ -33,3 +33,19 @@
        ```
 
       
+
+## 02_实现一个简单的能存取数据的List
+
+- [ ] 存放数据的缓冲区（字段：`Object[] elementData`）
+- [ ] 描述缓冲区数据数目的多少（字段：`int size`）
+- [ ] 存一个数据的功能（方法：add(E e)）
+- [ ] 取一个数据的功能（方法：get(int index)）
+
+1. 新建一个MyArrayList类
+
+2. Chapter02类
+
+   1. 测试add和get方法
+
+   
+
