@@ -53,6 +53,17 @@
 
 ### 一、目标
 
+- 数组中元素满时完成自动扩容
+
+### 二、设计
+- add(E e)中的扩容
+  - 尾插法，当数组容量满时创建新数组进行扩容。将新老数组元素复制到新数组中
+    ![](pic/arrayListadd(E).png)
+- add(int index, E element)中的扩容
+  - 指定索引位进行数据插入
+      ![](pic/arraryListAdd(Index,E).webp)
+  
+### 三、详细目标
 - 主要功能
 
 - [ ] add(E e)中的扩容
@@ -74,20 +85,11 @@
 
 - [ ] addAll(MyArrayList<E>  c) （选做）
 - [ ] addAll(int index, MyArrayList<E> c) （选做）
-
-### 二、设计
-- add(E e)中的扩容
-  - 尾插法，当数组容量满时创建新数组进行扩容。将新老数组元素复制到新数组中
-    ![](pic/arrayListadd(E).png)
-- add(int index, E element)中的扩容
-  - 指定索引位进行数据插入
-      ![](pic/arraryListAdd(Index,E).webp)
-
-### 三、实现
+### 四、实现
 
 见git commit节点 `03_实现自动扩容`代码
 
-### 四、测试
+### 五、测试
 
 见`Chapter03`类中代码
 
@@ -104,7 +106,7 @@
 - autoExpansionTest4()
   - 测试addAll(int index, MyArrayList<E> c)中触发自动扩容
 
-### 五、问题
+### 六、问题
 
 - Q1：用户创建MyArrayLis不指定容量时，是否立即分配默认容量？
 
@@ -126,7 +128,73 @@
 
 
 
-### 六、重点
+### 七、重点
 
 1. ArrayLis的扩容机制
 2. 熟悉`System.arraycopy()`和 `Arrays.copyOf` API的使用
+
+
+
+
+
+## 04_实现自定义序列化
+### 一、目标
+
+- 使ArrayList支持序列化
+- 自定义elementData的序列化
+
+### 二、设计
+
+- implements Serializable接口对象方可序列化
+- 使用`writeObject(ObjectOutputStream s)`和`readObject(ObjectInputStream s)`来实现自定义MyArrayList中的数组元素序列化，缩减elementData所需序列化的数据
+
+### 三、详细目标
+
+- [ ] 显式指定 serialVersionUID 的值
+
+  - 因为不同的 jdk 编译很可能会生成不同的 serialVersionUID 默认值，所以建议显式指定 serialVersionUID 的值
+
+- [ ] Object[] elementData字段自定义序列化
+
+  - 只序列化实际存储的那些元素，而不是整个数组，从而节省空间和时间
+
+  - [ ] 自定义writeObject(java.io.ObjectOutputStream s)方法
+  - [ ] 自定义readObject(java.io.ObjectInputStream s)方法
+
+### 四、实现
+
+见git commit节点 `04_实现自定义序列化`代码
+
+### 五、测试
+
+见`Chapter04`类中代码`serializationTest()`
+
+- 测试用例
+  
+  未自定义序列化时:
+  
+  - 1.使用transient修饰字段Object[] elementData时测试
+  
+  - 2.不使用transient修饰字段Object[] elementData时测试
+  
+  自定义序列化后（新增writeObject、readObject方法）：
+  
+  - 3.使用transient修饰字段Object[] elementData时测试
+  - 4.不使用transient修饰字段Object[] elementData时测试
+
+### 六、问题
+
+- Q1：ArrayList为何要实现自定义序列化？
+
+- Q2：自定义的`writeObject(ObjectOutputStream s)`和`readObject(ObjectInputStream s)`是何时被触发的？
+- Q3：自定义writeObject和readObject因注意哪些地方？
+
+
+
+### 七、重点
+
+1. 自定义对象序列化流程
+2. 注意writeObject和readObject方法中数据的读写顺序以及数目
+
+
+

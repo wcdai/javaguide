@@ -1,10 +1,15 @@
 package com.javaguide.aggregate._01ArrayList;
 
+import sun.misc.SharedSecrets;
+
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 
-public class MyArrayList<E> {
+public class MyArrayList<E> implements Serializable {
 
+    private static final long serialVersionUID = 8683452581122892189L;
 
     /**
      * Default initial capacity.
@@ -32,9 +37,10 @@ public class MyArrayList<E> {
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     /**
-     * 存储 ArrayList 元素的数组缓冲区。
+     * 存储 ArrayList 元素的数组缓冲区。<br>
+     * transient：{@link MyArrayList#writeObject(ObjectOutputStream)})s.defaultWriteObject()时才能会忽略该字段。
      */
-    private Object[] elementData ;
+    private transient Object[] elementData;
 
     /**
      * ArrayList 的大小（它包含的元素数量，非容量）。
@@ -289,5 +295,72 @@ public class MyArrayList<E> {
      */
     public Object[] toArray() {
         return Arrays.copyOf(elementData, size);
+    }
+
+    @Override
+    public String toString() {
+        return "MyArrayList{" +
+                "elementData=" + Arrays.toString(elementData) +
+                ", size=" + size +
+                '}';
+    }
+
+
+    /**
+     * Save the state of the <tt>ArrayList</tt> instance to a stream (that
+     * is, serialize it).
+     *
+     * @serialData The length of the array backing the <tt>ArrayList</tt>
+     *             instance is emitted (int), followed by all of its elements
+     *             (each an <tt>Object</tt>) in the proper order.
+     */
+    private void writeObject(java.io.ObjectOutputStream s)
+            throws java.io.IOException{
+        // Write out element count, and any hidden stuff
+//        int expectedModCount = modCount;
+        //此处会见非transient non-static的字段进行序列化
+        s.defaultWriteObject();
+
+        // Write out size as capacity for behavioural compatibility with clone()
+        s.writeInt(size);
+
+        // Write out all elements in the proper order.
+        //只序列化实际存储的那些元素，而不是整个数组，从而节省空间和时间
+        for (int i=0; i<size; i++) {
+            s.writeObject(elementData[i]);
+        }
+
+//        if (modCount != expectedModCount) { 防止在序列化时数据被更改了
+//            throw new ConcurrentModificationException();
+//        }
+    }
+
+    /**
+     * Reconstitute the <tt>ArrayList</tt> instance from a stream (that is,
+     * deserialize it).
+     */
+    private void readObject(java.io.ObjectInputStream s)
+            throws java.io.IOException, ClassNotFoundException {
+        elementData = EMPTY_ELEMENTDATA;
+
+        // Read in size, and any hidden stuff
+        s.defaultReadObject();
+
+        // Read in capacity
+        s.readInt(); // ignored
+
+        if (size > 0) {
+            // be like clone(), allocate array based upon size not capacity
+            int capacity = calculateCapacity(elementData, size);
+            //检查给定的数组类型和长度，以确保此 ObjectInputStream 允许创建此类数组。
+            SharedSecrets.getJavaOISAccess().checkArray(s, Object[].class, capacity);
+            ensureCapacityInternal(size);
+
+            Object[] a = elementData;
+            // Read in all elements in the proper order.
+            for (int i=0; i<size; i++) {
+                a[i] = s.readObject();
+            }
+        }
     }
 }
