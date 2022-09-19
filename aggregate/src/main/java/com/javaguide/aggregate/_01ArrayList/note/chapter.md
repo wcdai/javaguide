@@ -224,6 +224,8 @@
   - 赋予更大的public方法访问权限
   - 对`elementData`复制时只复制数组实际拥有的元素（生成新数组，数组中的元素仍然是引用原元素地址（浅克隆））
 
+### 四、实现
+
 
 见git commit节点 `05_实现对象克隆`代码
 
@@ -258,3 +260,125 @@
 2. 深克隆和浅克隆
 3. `ArrayList`对象克隆的过程
 
+
+
+
+
+## 06_实现顺序遍历
+
+### 一、目标
+
+- 使ArrayList支持顺序遍历
+
+### 二、设计
+
+- implements Iterable接口以支持顺序遍历
+  - 支持for-each 语句（增强for）
+  - 支持显示Iterator迭代
+  - 支持forEach()函数（since java1.8）
+  - 支持Spliterator迭代（并行遍历）（**本章不考虑**）
+
+- 自定义Iterator
+  - 实现顺序遍历
+  - 增强for语法实际调用的是Iterator进行迭代
+  - 以响应 Iterable接口中iterator()的要求
+
+- 迭代过程
+  - cursor：顺序遍历，使用cursor记录遍历到了哪一位置(cursor-1)
+    ![](pic/arraylistcursor.png)
+
+### 三、详细目标
+
+- [ ] implements Iterable
+
+- [ ] 重写`iterator()`方法
+  - 返回内部类实现`Itr`
+- [ ] 自定义`Iterator`的内部类实现`Itr`
+  - `hasNext()`
+  - `next()`
+
+### 四、实现
+
+见git commit节点 `06_实现顺序遍历`代码
+
+- 增强for使用的是Iterator进行实现
+
+  - 原始代码
+
+     ![](pic/zengqiangforcode.png)
+
+  - 反编译class得到的代码
+  ![](pic/zengqiangfor1.png)
+  
+  - 字节码文件
+    ![](pic/zengqaingfor2.png)
+    
+
+### 五、测试
+
+见`Chapter06`类中方法`main()`
+
+- 测试用例
+
+  - 1.测试增强for能否正常使用
+  - 2.测试使用自定义迭代器迭代能否正常使用
+  - 3.测试多线程环境下触发`java.util.ConcurrentModificationException`异常场景（未写）
+
+### 六、问题
+
+- Q1：Iterable和Iterator有什么区别？
+- Q2：增强for语法糖机制？和fori的区别？
+
+### 七、重点
+
+1. 了解Iterable和Iterator的区别
+1. 学会使用游标进行顺序遍历
+1. 了解增强for的机制
+
+### 八、补充-impl RandomAccess
+
+- RandomAccess
+  - 标记接口，`List`实现使用的标记接口表明它们支持快速（通常是恒定时间）随机访问
+
+	> 告诉别人我这个List支持随机访问，直接fori gei(i)就行
+
+- RandomAccess的使用方式
+
+  - 如果list instanceof RandomAccess ，则使用随机访问遍历，否则顺序遍历
+
+  ```java
+      private static void list(List<Integer> list) {
+          if (list instanceof RandomAccess) {
+              for (int i = 0; i < list.size(); i++) {
+                  Integer integer = list.get(i);
+                  System.out.println("integer = " + integer);
+              }
+          }else {
+              for (Integer integer : list) {
+                  System.out.println("integer = " + integer);
+              }
+          }
+      }
+  ```
+
+  - 测试代码
+
+    ```java
+        private static void randomAccessTest() {
+            List<Integer> list = new ArrayList<>();
+            list.add(1);
+            list.add(2);
+            list.add(3);
+            list.add(4);
+            list(list);
+            List<Integer> linkedList = new LinkedList<>();
+            linkedList.add(1);
+            linkedList.add(2);
+            linkedList.add(3);
+            linkedList.add(4);
+            list(linkedList);
+    
+        }
+    ```
+
+    

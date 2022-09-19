@@ -5,10 +5,11 @@ import sun.misc.SharedSecrets;
 
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 
-public class MyArrayList<E> implements Serializable, Cloneable {
+public class MyArrayList<E> implements Serializable, Cloneable, Iterable<E> ,RandomAccess{
+
+//    protected transient int modCount = 0;
 
     /**
      * 建议在每一个序列化的类中显式指定 serialVersionUID 的值。
@@ -428,7 +429,40 @@ public class MyArrayList<E> implements Serializable, Cloneable {
         System.out.println("clone = " + clone);
     }
 
+    @Override
+    public Iterator<E> iterator() {
+        return new Itr();
+    }
 
+    private class Itr implements Iterator<E> {
+        //下一个元素的索引位置
+        int cursor;       // index of next element to return
+        //上一个元素的索引位置（未实现remove操作，本章用不到）
+        int lastRet = -1; // index of last element returned; -1 if no such
+//        int expectedModCount = modCount;
+
+        Itr() {
+        }
+
+        public boolean hasNext() {
+            return cursor != size;
+        }
+
+        @SuppressWarnings("unchecked")
+        public E next() {
+//            checkForComodification(); //检查迭代期间是否有元素增删。此处等实现删除功能后再写
+            //i: 当前元素的索引位置
+            int i = cursor;//
+            if (cursor >= size)
+                throw new NoSuchElementException();
+            Object[] elementData = MyArrayList.this.elementData;
+            if (i >= elementData.length)
+                //通常单线程情况下，数组的容量只能不断增加。// Question: 多线程时如何触发该异常？
+                throw new ConcurrentModificationException();
+            cursor = i + 1;
+            return (E) elementData[i];
+        }
+    }
 }
 
 
