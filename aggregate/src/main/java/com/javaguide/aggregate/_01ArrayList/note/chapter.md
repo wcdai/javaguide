@@ -198,3 +198,63 @@
 
 
 
+
+
+## 05_实现对象克隆
+
+### 一、目标
+
+- 使ArrayList支持对象克隆
+
+### 二、设计
+
+- implements Cloneable接口以支持`Object.clone()`
+  - Cloneable为标记接口，未implements Cloneable接口时调用`Object.clone()`会触发`java.lang.CloneNotSupportedException`异常
+
+- 重写`Object.clone()`方法以实现自定义克隆和赋予更大的方法访问权限
+  - 自定义克隆，重新生成elementData以缩减数组占用空间
+  - 赋予public方法访问权限，以使外部对象有使用该方法的权限
+
+
+### 三、详细目标
+
+- [ ] implements Cloneable
+
+- [ ] 重写`Object.clone()`方法
+  - 赋予更大的public方法访问权限
+  - 对`elementData`复制时只复制数组实际拥有的元素（生成新数组，数组中的元素仍然是引用原元素地址（浅克隆））
+
+
+见git commit节点 `05_实现对象克隆`代码
+
+### 五、测试
+
+见`MyArrayList`类中方法`objectCloneInThisTest()`
+
+见`Chapter05`类中方法`objectCloneTest()`
+
+- 测试用例
+
+  在`MyArrayList`中测试:
+
+  - 1.测试未implements Serializable接口使用Object.clone()方法进行对象克隆场景
+
+  - 2.测试implements Serializable接口但未重写Object.clone()方法进行对象克隆场景
+
+  在`Chapter05`中测试：
+
+  - 3.测试重写`Object.clone()`但未使用`Arrays.copyOf()`复制`elementData`进行克隆对象后，再进行`add()`操作的场景
+  - 4.测试重写`Object.clone()`并使用`Arrays.copyOf()`复制`elementData`进行克隆对象后，再进行`add()`操作的场景
+  - 5.测试重写`Object.clone()`并使用`Arrays.copyOf()`复制`elementData`进行克隆对象后，再进行元素对象属性修改的场景
+
+### 六、问题
+
+- Q1：`Object.clone()`属于深克隆还是浅克隆？
+- Q2：`ArrayList`对象克隆的过程是怎样的？
+
+### 七、重点
+
+1. 对象克隆的实现方式
+2. 深克隆和浅克隆
+3. `ArrayList`对象克隆的过程
+

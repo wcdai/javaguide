@@ -1,5 +1,6 @@
 package com.javaguide.aggregate._01ArrayList;
 
+
 import sun.misc.SharedSecrets;
 
 import java.io.ObjectOutputStream;
@@ -7,8 +8,12 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 
-public class MyArrayList<E> implements Serializable {
+public class MyArrayList<E> implements Serializable, Cloneable {
 
+    /**
+     * 建议在每一个序列化的类中显式指定 serialVersionUID 的值。
+     * 因为不同的 jdk 编译很可能会生成不同的 serialVersionUID 默认值，从而导致在反序列化时抛出 InvalidClassExceptions 异常。
+     */
     private static final long serialVersionUID = 8683452581122892189L;
 
     /**
@@ -223,7 +228,7 @@ public class MyArrayList<E> implements Serializable {
 
     private void ensureExplicitCapacity(int minCapacity) {
         // overflow-conscious code
-        //// TODO: 2022/9/18  minCapacity < elementData.length会是何种场景？
+        // Question: minCapacity < elementData.length会是何种场景？
         if (minCapacity - elementData.length > 0)
             grow(minCapacity);
     }
@@ -250,7 +255,7 @@ public class MyArrayList<E> implements Serializable {
         // overflow-conscious code
         int oldCapacity = elementData.length;
         int newCapacity = oldCapacity + (oldCapacity >> 1);
-        if (newCapacity - minCapacity < 0)//// TODO: 2022/9/18 : newCapacity - minCapacity < 0 什么场景发生？
+        if (newCapacity - minCapacity < 0)// Question: newCapacity - minCapacity < 0 什么场景发生？
             newCapacity = minCapacity;
         if (newCapacity - MAX_ARRAY_SIZE > 0)
             newCapacity = hugeCapacity(minCapacity);
@@ -260,7 +265,7 @@ public class MyArrayList<E> implements Serializable {
     }
 
     private int hugeCapacity(int minCapacity) {
-        if (minCapacity < 0) // overflow  //// TODO: 2022/9/18 minCapacity < 0是什么情况？
+        if (minCapacity < 0) // overflow  // Question: minCapacity < 0是什么情况？
             throw new OutOfMemoryError();
         return (minCapacity > MAX_ARRAY_SIZE) ?
                 Integer.MAX_VALUE :
@@ -311,11 +316,11 @@ public class MyArrayList<E> implements Serializable {
      * is, serialize it).
      *
      * @serialData The length of the array backing the <tt>ArrayList</tt>
-     *             instance is emitted (int), followed by all of its elements
-     *             (each an <tt>Object</tt>) in the proper order.
+     * instance is emitted (int), followed by all of its elements
+     * (each an <tt>Object</tt>) in the proper order.
      */
     private void writeObject(java.io.ObjectOutputStream s)
-            throws java.io.IOException{
+            throws java.io.IOException {
         // Write out element count, and any hidden stuff
 //        int expectedModCount = modCount;
         //此处会见非transient non-static的字段进行序列化
@@ -326,7 +331,7 @@ public class MyArrayList<E> implements Serializable {
 
         // Write out all elements in the proper order.
         //只序列化实际存储的那些元素，而不是整个数组，从而节省空间和时间
-        for (int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             s.writeObject(elementData[i]);
         }
 
@@ -358,9 +363,72 @@ public class MyArrayList<E> implements Serializable {
 
             Object[] a = elementData;
             // Read in all elements in the proper order.
-            for (int i=0; i<size; i++) {
+            for (int i = 0; i < size; i++) {
                 a[i] = s.readObject();
             }
         }
     }
+
+
+    /**
+     * Returns a shallow copy of this <tt>ArrayList</tt> instance.  (The
+     * elements themselves are not copied.)
+     *
+     * @return a clone of this <tt>ArrayList</tt> instance
+     */
+    public Object clone() {
+        try {
+            MyArrayList<?> v = (MyArrayList<?>) super.clone();
+            // Question: 此处若不进行Arrays.copyOf会有怎样的影响？
+            v.elementData = Arrays.copyOf(elementData, size);
+            //将modCount置为0，防止在克隆期间有数组元素的增删
+//            v.modCount = 0;
+            return v;
+        } catch (CloneNotSupportedException e) {
+            // this shouldn't happen, since we are Cloneable
+            throw new InternalError(e);
+        }
+    }
+
+    public static void main(String[] args) {
+        /**
+         *测试用例：
+         *   1.测试未implements Serializable接口使用Object.clone()方法进行对象克隆场景
+         *      结果：java.lang.CloneNotSupportedException
+         *   2.测试implements Serializable接口但未重写Object.clone()方法进行对象克隆场景
+         *      结果：正常运行
+         */
+        objectCloneInThisTest();
+    }
+
+    /**
+     * 测试用例：
+     * 1.测试未implements Serializable接口使用Object.clone()方法进行对象克隆场景
+     * 结果：java.lang.CloneNotSupportedException
+     * 2.测试implements Serializable接口但未重写Object.clone()方法进行对象克隆场景
+     * 结果：正常运行，对象克隆成功。elementData中的空元素也会被复制
+     */
+    private static void objectCloneInThisTest() {
+        MyArrayList<Integer> myArrayList = new MyArrayList<>();
+        myArrayList.add(1);
+        myArrayList.add(2);
+        myArrayList.add(3);
+        myArrayList.add(4);
+        myArrayList.add(5);
+        myArrayList.add(6);
+        myArrayList.add(7);
+        myArrayList.add(8);
+        Object clone = null;
+        try {
+            clone = myArrayList.clone();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+        System.out.println("clone = " + clone);
+    }
+
+
 }
+
+
