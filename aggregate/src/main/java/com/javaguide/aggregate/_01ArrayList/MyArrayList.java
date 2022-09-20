@@ -6,10 +6,37 @@ import sun.misc.SharedSecrets;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Consumer;
 
-public class MyArrayList<E> implements Serializable, Cloneable, Iterable<E> ,RandomAccess{
+public class MyArrayList<E> implements Serializable, Cloneable, Iterable<E>, RandomAccess, Collection<E> {
 
-//    protected transient int modCount = 0;
+    /**
+     * The number of times this list has been <i>structurally modified</i>.
+     * Structural modifications are those that change the size of the
+     * list, or otherwise perturb it in such a fashion that iterations in
+     * progress may yield incorrect results.
+     *
+     * <p>This field is used by the iterator and list iterator implementation
+     * returned by the {@code iterator} and {@code listIterator} methods.
+     * If the value of this field changes unexpectedly, the iterator (or list
+     * iterator) will throw a {@code ConcurrentModificationException} in
+     * response to the {@code next}, {@code remove}, {@code previous},
+     * {@code set} or {@code add} operations.  This provides
+     * <i>fail-fast</i> behavior, rather than non-deterministic behavior in
+     * the face of concurrent modification during iteration.
+     *
+     * <p><b>Use of this field by subclasses is optional.</b> If a subclass
+     * wishes to provide fail-fast iterators (and list iterators), then it
+     * merely has to increment this field in its {@code add(int, E)} and
+     * {@code remove(int)} methods (and any other methods that it overrides
+     * that result in structural modifications to the list).  A single call to
+     * {@code add(int, E)} or {@code remove(int)} must add no more than
+     * one to this field, or the iterators (and list iterators) will throw
+     * bogus {@code ConcurrentModificationExceptions}.  If an implementation
+     * does not wish to provide fail-fast iterators, this field may be
+     * ignored.
+     */
+    protected transient int modCount = 0;
 
     /**
      * 建议在每一个序列化的类中显式指定 serialVersionUID 的值。
@@ -116,7 +143,7 @@ public class MyArrayList<E> implements Serializable, Cloneable, Iterable<E> ,Ran
      */
     public boolean add(E e) {
         //有必要扩容时扩容
-        ensureCapacityInternal(size + 1);
+        ensureCapacityInternal(size + 1);  // Increments modCount!!
         elementData[size] = e;
         size++;
         return true;
@@ -155,7 +182,8 @@ public class MyArrayList<E> implements Serializable, Cloneable, Iterable<E> ,Ran
      * @return <tt>true</tt> if this list changed as a result of the call
      * @throws NullPointerException if the specified collection is null
      */
-    public boolean addAll(MyArrayList<E> c) {//待MyArrayLis实现Collection接口后该有参构造再改为支持所有的Collection入参
+    @Override
+    public boolean addAll(Collection<? extends E> c) {
         Object[] a = c.toArray();
         int numNew = a.length;
         ensureCapacityInternal(size + numNew);
@@ -227,7 +255,13 @@ public class MyArrayList<E> implements Serializable, Cloneable, Iterable<E> ,Ran
         ensureExplicitCapacity(calculateCapacity(elementData, minCapacity));
     }
 
+    /**
+     * 显示扩容
+     *
+     * @param minCapacity
+     */
     private void ensureExplicitCapacity(int minCapacity) {
+        modCount++;
         // overflow-conscious code
         // Question: minCapacity < elementData.length会是何种场景？
         if (minCapacity - elementData.length > 0)
@@ -377,6 +411,7 @@ public class MyArrayList<E> implements Serializable, Cloneable, Iterable<E> ,Ran
      *
      * @return a clone of this <tt>ArrayList</tt> instance
      */
+    @Override
     public Object clone() {
         try {
             MyArrayList<?> v = (MyArrayList<?>) super.clone();
@@ -437,12 +472,11 @@ public class MyArrayList<E> implements Serializable, Cloneable, Iterable<E> ,Ran
     private class Itr implements Iterator<E> {
         //下一个元素的索引位置
         int cursor;       // index of next element to return
-        //上一个元素的索引位置（未实现remove操作，本章用不到）
+        //上一个元素的索引位置
         int lastRet = -1; // index of last element returned; -1 if no such
-//        int expectedModCount = modCount;
+        int expectedModCount = modCount;
 
-        Itr() {
-        }
+        Itr() {}
 
         public boolean hasNext() {
             return cursor != size;
@@ -450,7 +484,7 @@ public class MyArrayList<E> implements Serializable, Cloneable, Iterable<E> ,Ran
 
         @SuppressWarnings("unchecked")
         public E next() {
-//            checkForComodification(); //检查迭代期间是否有元素增删。此处等实现删除功能后再写
+            checkForComodification(); //检查迭代期间是否有元素增删。
             //i: 当前元素的索引位置
             int i = cursor;//
             if (cursor >= size)
@@ -460,9 +494,308 @@ public class MyArrayList<E> implements Serializable, Cloneable, Iterable<E> ,Ran
                 //通常单线程情况下，数组的容量只能不断增加。// Question: 多线程时如何触发该异常？
                 throw new ConcurrentModificationException();
             cursor = i + 1;
-            return (E) elementData[i];
+            return (E) elementData[lastRet = i];
+        }
+
+        public void remove() {
+            if (lastRet < 0)
+                throw new IllegalStateException();
+            checkForComodification();
+
+            try {
+                MyArrayList.this.remove(lastRet);
+                cursor = lastRet;
+                lastRet = -1;
+                expectedModCount = modCount;
+            } catch (IndexOutOfBoundsException ex) {
+                throw new ConcurrentModificationException();
+            }
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void forEachRemaining(Consumer<? super E> consumer) {
+            Objects.requireNonNull(consumer);
+            final int size = MyArrayList.this.size;
+            int i = cursor;
+            if (i >= size) {
+                return;
+            }
+            final Object[] elementData = MyArrayList.this.elementData;
+            if (i >= elementData.length) {
+                throw new ConcurrentModificationException();
+            }
+            while (i != size && modCount == expectedModCount) {
+                consumer.accept((E) elementData[i++]);
+            }
+            // update once at end of iteration to reduce heap write traffic
+            cursor = i;
+            lastRet = i - 1;
+            checkForComodification();
+        }
+
+        final void checkForComodification() {
+            if (modCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
         }
     }
+
+
+    @Override
+    public int size() {
+        return size;
+    }
+
+    /**
+     * Returns <tt>true</tt> if this list contains no elements.
+     *
+     * @return <tt>true</tt> if this list contains no elements
+     */
+    @Override
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    /**
+     * Returns <tt>true</tt> if this list contains the specified element.
+     * More formally, returns <tt>true</tt> if and only if this list contains
+     * at least one element <tt>e</tt> such that
+     * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o.equals(e))</tt>.
+     *
+     * @param o element whose presence in this list is to be tested
+     * @return <tt>true</tt> if this list contains the specified element
+     */
+    @Override
+    public boolean contains(Object o) {
+        return indexOf(o) >= 0;
+    }
+
+    /**
+     * Returns an array containing all of the elements in this list in proper
+     * sequence (from first to last element); the runtime type of the returned
+     * array is that of the specified array.  If the list fits in the
+     * specified array, it is returned therein.  Otherwise, a new array is
+     * allocated with the runtime type of the specified array and the size of
+     * this list.
+     *
+     * <p>If the list fits in the specified array with room to spare
+     * (i.e., the array has more elements than the list), the element in
+     * the array immediately following the end of the collection is set to
+     * <tt>null</tt>.  (This is useful in determining the length of the
+     * list <i>only</i> if the caller knows that the list does not contain
+     * any null elements.)
+     *
+     * @param a the array into which the elements of the list are to
+     *          be stored, if it is big enough; otherwise, a new array of the
+     *          same runtime type is allocated for this purpose.
+     * @return an array containing the elements of the list
+     * @throws ArrayStoreException if the runtime type of the specified array
+     *         is not a supertype of the runtime type of every element in
+     *         this list
+     * @throws NullPointerException if the specified array is null
+     */
+    @Override
+    public <T> T[] toArray(T[] a) {
+        if (a.length < size)
+            // Make a new array of a's runtime type, but my contents:
+            return (T[]) Arrays.copyOf(elementData, size, a.getClass());
+        System.arraycopy(elementData, 0, a, 0, size);
+        if (a.length > size)
+            a[size] = null;// Question: 这是为了干啥？
+        return a;
+    }
+
+    /**
+     * Removes the first occurrence of the specified element from this list,
+     * if it is present.  If the list does not contain the element, it is
+     * unchanged.  More formally, removes the element with the lowest index
+     * <tt>i</tt> such that
+     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>
+     * (if such an element exists).  Returns <tt>true</tt> if this list
+     * contained the specified element (or equivalently, if this list
+     * changed as a result of the call).
+     *
+     * @param o element to be removed from this list, if present
+     * @return <tt>true</tt> if this list contained the specified element
+     */
+    public boolean remove(Object o) {
+        if (o == null) {
+            for (int index = 0; index < size; index++) {
+                if (elementData[index] == null) {
+                    fastRemove(index);
+                    return true;
+                }
+            }
+        } else {
+            for (int index = 0; index < size; index++) {
+                if (o.equals(elementData[index])) {
+                    fastRemove(index);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>This implementation iterates over the specified collection,
+     * checking each element returned by the iterator in turn to see
+     * if it's contained in this collection.  If all elements are so
+     * contained <tt>true</tt> is returned, otherwise <tt>false</tt>.
+     *
+     * @throws ClassCastException            {@inheritDoc}
+     * @throws NullPointerException          {@inheritDoc}
+     * @see #contains(Object)
+     */
+    public boolean containsAll(Collection<?> c) {
+        for (Object e : c)
+            if (!contains(e))
+                return false;
+        return true;
+    }
+
+    /**
+     * Removes from this list all of its elements that are contained in the
+     * specified collection.
+     *
+     * @param c collection containing elements to be removed from this list
+     * @return {@code true} if this list changed as a result of the call
+     * @throws ClassCastException   if the class of an element of this list
+     *                              is incompatible with the specified collection
+     *                              (<a href="Collection.html#optional-restrictions">optional</a>)
+     * @throws NullPointerException if this list contains a null element and the
+     *                              specified collection does not permit null elements
+     *                              (<a href="Collection.html#optional-restrictions">optional</a>),
+     *                              or if the specified collection is null
+     * @see Collection#contains(Object)
+     */
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        Objects.requireNonNull(c);
+        return batchRemove(c, false);
+    }
+
+    /**
+     * Retains only the elements in this list that are contained in the
+     * specified collection.  In other words, removes from this list all
+     * of its elements that are not contained in the specified collection.
+     *
+     * @param c collection containing elements to be retained in this list
+     * @return {@code true} if this list changed as a result of the call
+     * @throws ClassCastException if the class of an element of this list
+     *         is incompatible with the specified collection
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
+     * @throws NullPointerException if this list contains a null element and the
+     *         specified collection does not permit null elements
+     * (<a href="Collection.html#optional-restrictions">optional</a>),
+     *         or if the specified collection is null
+     * @see Collection#contains(Object)
+     */
+    public boolean retainAll(Collection<?> c) {
+        Objects.requireNonNull(c);
+        return batchRemove(c, true);
+    }
+
+    @Override
+    public void clear() {
+        modCount++;
+
+        // clear to let GC do its work
+        for (int i = 0; i < size; i++) {
+            elementData[i] = null;
+        }
+
+        size = 0;
+    }
+
+
+    /**
+     * Private remove method that skips bounds checking and does not
+     * return the value removed.
+     */
+    private void fastRemove(int index) {
+        modCount++;
+        //需要移动的元素的数目：删除一个元素后，该索引位后面开始的元素将往前移动一位
+        int numMoved = size - (index + 1);
+        if (numMoved > 0) {
+            //将源数组（elementData）中的起始位置为index+1的数据，移动到目标数组（elementData，还是自己）的起始位置index，一共移动numMoved位数据
+            //从elementData的index+1位移动到elementData的index位。即向前移动一位数据。
+            System.arraycopy(elementData, index + 1, elementData, index,
+                    numMoved);
+        }
+
+        elementData[--size] = null; // clear to let GC do its work
+
+    }
+
+
+    /**
+     * 思想：维护两个指针。一个读指针(r)，一个写指针(w)。读指针从0遍历到数组尾，在遍历中，如果符合条件就elementData[w++] = elementData[r]
+     *
+     * @param c
+     * @param complement
+     * @return
+     */
+    private boolean batchRemove(Collection<?> c, boolean complement) {
+        final Object[] elementData = this.elementData;
+        int r = 0, w = 0;
+        boolean modified = false;
+        try {
+            for (; r < size; r++) {
+                if (c.contains(elementData[r]) == complement) {
+                    elementData[w++] = elementData[r];
+                }
+            }
+        } finally {
+            // Preserve behavioral compatibility with AbstractCollection,
+            // even if c.contains() throws.
+            if (r != size) {// Question: w != size会是何种场景？
+                System.arraycopy(elementData, r,
+                        elementData, w,
+                        size - r);
+                w += size - r;
+            }
+            if (w != size) {
+                // clear to let GC do its work
+                for (int i = w; i < size; i++) {
+                    elementData[i] = null;
+                }
+                modCount += size - w;
+                size = w;
+                modified = true;
+            }
+        }
+        return modified;
+    }
+
+
+    /**
+     * Returns the index of the first occurrence of the specified element
+     * in this list, or -1 if this list does not contain the element.
+     * More formally, returns the lowest index <tt>i</tt> such that
+     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>,
+     * or -1 if there is no such index.
+     */
+    public int indexOf(Object o) {
+        if (o == null) {
+            for (int i = 0; i < size; i++) {
+                if (elementData[i] == null) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = 0; i < size; i++) {
+                if (o.equals(elementData[i])) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
 }
 
 

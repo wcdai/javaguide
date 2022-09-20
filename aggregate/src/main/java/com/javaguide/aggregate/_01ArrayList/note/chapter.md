@@ -5,6 +5,8 @@
 
 1. 复制`AbstractCollection`、`AbstractList` `ArrayList`源码至`com.javaguide.aggregate._01ArrayList.source`包下
 
+    ![image-20220920150516519](chapter.assets/image-20220920150516519.png)
+
 2. 将source包下`ArrayList`对`java.util.AbstractList`的引用全部改为引用`com.javaguide.aggregate._01ArrayList.source.AbstractList`
 
 3. 在soure包中的ArrayList构造函数代码中增加控制台打印语句。Test包中编写Chapter01类进行测试
@@ -382,3 +384,158 @@
     ```
 
     
+
+
+
+
+
+## 07_implement Collection
+
+### 一、目标
+
+- ArrayList实现Collection接口
+
+### 二、设计
+
+ - 集合间的关系
+
+   ![jihejianguanxi](chapter.assets/jihejianguanxi.webp)
+
+- Collection规范（需要实现类重写的方法）
+
+  ![image-20220920135138362](chapter.assets/image-20220920135138362.png)
+
+  - **添加元素**
+
+    - `add(E e)`：添加元素对象到当前集合中
+
+    - `addAll(Collection<? extends E> c)`：添加other集合中的所有元素对象到当前集合中，即this = this ∪ other。*求并集*。
+
+  - **删除元素**
+
+    - `remove(Object o)`：从当前集合中删除第一个找到的与obj对象equals返回true的元素。
+
+    - `removeAll(Collection<?> c)`：从当前集合中删除所有与coll集合中相同的元素。即this = this - this ∩ coll。*移除交集*。
+
+    - `clear()`：从此集合中移除所有元素（可选操作）。此方法返回后，集合将为空。
+
+    - `retainAll(Collection<?> coll)`：仅保留此集合中包含在指定集合中的元素（可选操作）。换句话说，从这个集合中移除所有不包含在指定集合中的元素。求交集，即this = this ∩ coll；
+
+  - **判断元素**
+
+    - `isEmpty()`：判断当前集合是否为空集合。
+
+    - `contains(Object o)`：判断当前集合中是否存在一个与obj对象equals返回true的元素。
+
+    - `containsAll(Collection<?> c)`：判断c集合是否是当前集合的“子集”。c集合中的元素是否在当前集合中都存在。
+
+  - **集合转数组**
+
+    - `Object[] toArray()`：返回包含当前集合中所有元素的`Object`类型数组
+
+      - `Object`类型数组强制转换为其他类型数组大概率会失败
+
+    -  `T[] toArray(T[] a)`：返回包含当前集合中所有元素的`T`类型数组
+
+      - `T`类型必须是`Collection<E>`中`E`类型或者`E`类型的超类，否则抛出`ArrayStoreException`异常
+
+      - 推荐用法示例
+  
+        ```java
+                Collection<String> coll = new ArrayList<>();
+                coll.add("aa");
+                String[] array = new String[coll.size()];
+                coll.toArray(array);
+        		//数据已经从coll复制到了array
+                System.out.println("array = " + array);
+        ```
+
+  - **获取集合中元素个数**
+  
+    - `size()`：获取当前集合中实际存储的元素个数
+    
+  - **获取迭代器**
+  
+    - iterator()：获取迭代器，继承自`Iterable`的功能，用于支持迭代和增强的 for 语句
+  
+- ***快速失败（fail-fast）机制***迭代期间ArrayList结构上被修时迭代器将抛出`ConcurrentModificationException`
+
+  > 如果在Iterator、ListIterator迭代器创建后的任意时间从结构上修改了集合（通过迭代器自身的 remove 或 add 方法之外的任何其他方式），则迭代器将抛出 ConcurrentModificationException。因此，面对并发的修改，迭代器很快就完全失败，而不是冒着在将来不确定的时间任意发生不确定行为的风险。
+
+  > 注意，迭代器的快速失败行为不能得到保证，一般来说，存在不同步的并发修改时，不可能作出任何坚决的保证。快速失败迭代器尽最大努力抛出 ConcurrentModificationException。因此，编写依赖于此异常的程序的方式是错误的，正确做法是：*迭代器的快速失败行为应该仅用于检测单线程情况下的 bug
+
+  - 记录ArrayList结构上被修改次数`modCount`
+
+  - 在迭代期间应用`modCount`，防止出现不正确迭代
+  - 在结构上修改时记录`modCount`
+  
+
+
+
+### 三、详细目标
+
+- [ ] implements Collection
+- [ ] 实现Collection规范（重写需要实现类重写的方法）
+  - **添加元素**
+    - [ ] `add(E e)`
+
+    - [ ] `addAll(Collection<? extends E> c)`
+
+  - **删除元素**
+    - [ ] `remove(Object o)`
+
+    - [ ] `removeAll(Collection<?> c)`
+
+    - [ ] `clear()`
+
+    - [ ] `retainAll(Collection<?> coll)`
+
+  - **判断元素**
+    - [ ] `isEmpty()`
+    
+    - [ ] `contains(Object o)`
+    
+    - [ ] `containsAll(Collection<?> c)`
+    
+  - **集合转数组**
+    - [ ] `Object[] toArray()`
+    
+    - [ ] `T[] toArray(T[] a)`
+    
+  - **获取集合中元素个数**
+    - [ ] `size()`
+- [ ] 完善迭代期间ArrayList结构上被修改产生的问题
+
+
+
+### 四、实现
+
+
+见git commit节点 `07_implement Collection`代码
+
+### 五、测试
+
+- 测试用例
+  - 测试上述所有 `Collection`接口所有的方法
+  - fail-fast测试
+
+### 六、问题
+
+- Q1:  `Collection`的功能是什么，主要规定了哪些接口规范？
+- Q2: `Collection`和Array有怎样的区别？
+- Q3: `Collection`如何转数组？怎样写比较好？
+- Q4:   `ArrayList`如何实现求两个集合的交集的？
+  - tips：读写双指针算法
+
+- Q5： `ArrayList`如何实现快速失败（fail-fast）机制的？
+- Q6: fail-fast能否检查出并发情况下迭代时对 `ArrayList`结构上的修改？
+
+### 七、重点
+
+1. 集合间基本关系
+1. Collection规范（需要实现类重写的方法）
+1. 使用读写双指针算法完成求交集和交集的补集
+1. `modCount`实现快速失败（fail-fast）机制
+
+
+
